@@ -1,6 +1,8 @@
 # LinkedIn-Content-Extractor
 
-## Tech Used -> 
+@sumedhx @vjangle 
+
+## Tech Used
 - LinkedIn
 - Telegram Bot
 - Beautiful Soup
