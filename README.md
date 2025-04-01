@@ -1,6 +1,12 @@
 # LinkedIn-Content-Extractor
 
-## Tech Used -> LinkedIn, Telegram Bot, Beautiful Soup, FastAPI, Server(Ngrok, AWS),Notion
+## Tech Used -> 
+- LinkedIn, 
+- Telegram Bot, 
+- Beautiful Soup, 
+- FastAPI, 
+- Server(Ngrok, AWS),
+- Notion
 
 ## Work Flow
 - User can copy LinkedIn post url and share it to the telegram bot. 
