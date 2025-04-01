@@ -1,11 +1,11 @@
 # LinkedIn-Content-Extractor
 
 ## Tech Used -> 
-- LinkedIn, 
-- Telegram Bot, 
-- Beautiful Soup, 
-- FastAPI, 
-- Server(Ngrok, AWS),
+- LinkedIn
+- Telegram Bot
+- Beautiful Soup
+- FastAPI
+- Server(Ngrok, AWS)
 - Notion
 
 ## Work Flow
