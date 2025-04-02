@@ -1,6 +1,6 @@
 # LinkedIn-Content-Extractor
 
-[@sumedhx](https://github.com/sumedhx) | [@vjangale](https://github.com/vjangale) 
+[sumedhx](https://github.com/sumedhx) | [vjangale](https://github.com/vjangale) | [TonyMali](https://github.com/TonyMali)
 
 ## Tech Used
 - LinkedIn
