@@ -9,6 +9,7 @@
 - FastAPI
 - Server(Ngrok, AWS)
 - Notion
+- selenium
 
 ## Work Flow
 - User can copy LinkedIn post url and share it to the telegram bot. 
