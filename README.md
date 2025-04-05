@@ -15,3 +15,7 @@
 - The Bot will check if is a valid linkedin link or not.
 - Backend will extract the content from post using beautiful soup.
 - The extracted content will be saved into the Notion database.
+
+## Run
+- uvicorn main:app --reload
+
