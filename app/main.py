@@ -1,8 +1,5 @@
-# Wihtout the Login system 
-
-
 from fastapi import FastAPI, Request
-import os, time, random, re, requests
+import os, pickle, time, random, re, requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from datetime import datetime, timezone
@@ -25,6 +22,9 @@ NOTION_API_KEY = os.getenv("NOTION_API_KEY")
 NOTION_DATABASE_ID = os.getenv("NOTION_DATABASE_ID")
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
+COOKIES_FILE = 'cookies.pkl'
+LINKEDIN_URL = 'https://www.linkedin.com'
+
 # ========== Selenium Setup ==========
 def get_chrome_options(headless=True):
     options = Options()
@@ -44,6 +44,43 @@ def get_driver(headless=True):
         service=Service(ChromeDriverManager().install()),
         options=get_chrome_options(headless)
     )
+
+# ========== Login & Cookie Setup ==========
+def ensure_logged_in():
+    if os.path.exists(COOKIES_FILE):
+        print("✅ Using saved cookies.")
+        return
+
+    print("🔓 Cookies not found. Opening browser for manual login...")
+    driver = get_driver(headless=False)
+    driver.get("https://www.linkedin.com/login")
+
+    # Give the user 60 seconds max to log in manually
+    max_wait = 60
+    start_time = time.time()
+    logged_in = False
+
+    print("⏳ You have 60 seconds to log in manually...")
+
+    while time.time() - start_time < max_wait:
+        current_url = driver.current_url
+        if "feed" in current_url or "linkedin.com/in/" in current_url:
+            logged_in = True
+            break
+        time.sleep(2)  # check every 2 seconds
+
+    if not logged_in:
+        print("❌ Login not detected within time limit. Browser closed.")
+        driver.quit()
+        raise Exception("Login failed or timed out.")
+
+    # Save cookies after successful login
+    with open(COOKIES_FILE, 'wb') as f:
+        pickle.dump(driver.get_cookies(), f)
+        print("✅ Cookies saved.")
+
+    driver.quit()
+
 
 # ========== Notion ==========
 def notion_send(title, content, clean_url, image_url):
@@ -115,12 +152,27 @@ async def receive_update(request: Request):
     linkedin_url = match.group(1)
     clean_url = linkedin_url.split("?")[0]
 
+    # Ensure we're logged in (save cookies if needed)
+    ensure_logged_in()
+
     driver = get_driver(headless=True)
+    driver.get(LINKEDIN_URL)
 
-    # Go directly to LinkedIn post without login
+    # Load cookies
+    with open(COOKIES_FILE, 'rb') as f:
+        cookies = pickle.load(f)
+        for cookie in cookies:
+            if 'expiry' in cookie:
+                del cookie['expiry']
+            driver.add_cookie(cookie)
+    driver.get("https://www.linkedin.com/feed/")
+    time.sleep(4)
+
+    # Go to LinkedIn post
     driver.get(linkedin_url)
-    time.sleep(3)
 
+    # Wait for main post container to load
+    #Added this because when send a link it sometimes process the old/previous link
     try:
         WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.CLASS_NAME, "update-components-actor__title"))
@@ -130,11 +182,13 @@ async def receive_update(request: Request):
         driver.quit()
         return {"status": "post_not_loaded"}
 
+    # Scroll to trigger loading
     actions = ActionChains(driver)
     for _ in range(3):
         actions.send_keys(Keys.PAGE_DOWN).perform()
         time.sleep(random.uniform(1.5, 2.5))
 
+    # Parse page
     soup = BeautifulSoup(driver.page_source, 'html.parser')
 
     # ==== Title from Author ====
