@@ -8,23 +8,22 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# -------------------------------------
-# ✅ Download Chrome for Testing (v114)
-# -------------------------------------
-RUN wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/114.0.5735.90/linux64/chrome-linux64.zip && \
+# Install Chrome (headless)
+RUN apt-get update && apt-get install -y wget unzip curl gnupg
+
+RUN wget https://storage.googleapis.com/chrome-for-testing-public/121.0.6167.139/linux64/chrome-linux64.zip && \
     unzip chrome-linux64.zip && \
-    mv chrome-linux64 /opt/chrome && \
-    ln -s /opt/chrome/chrome /usr/bin/chromium && \
+    mv chrome-linux64 /opt/chromium && \
+    ln -s /opt/chromium/chrome /usr/bin/chromium && \
     rm chrome-linux64.zip
 
-# -------------------------------------
-# ✅ Download ChromeDriver (v114 match)
-# -------------------------------------
-RUN wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/114.0.5735.90/linux64/chromedriver-linux64.zip && \
+# Install ChromeDriver (matching version)
+RUN wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/121.0.6167.139/linux64/chromedriver-linux64.zip && \
     unzip chromedriver-linux64.zip && \
     mv chromedriver-linux64/chromedriver /usr/bin/chromedriver && \
     chmod +x /usr/bin/chromedriver && \
-    rm -rf chromedriver-linux64*
+    rm -rf chromedriver-linux64.zip chromedriver-linux64
+
 
 # Set environment variables
 ENV CHROME_BIN=/usr/bin/chromium
