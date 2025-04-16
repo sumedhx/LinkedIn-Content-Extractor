@@ -40,9 +40,16 @@ def get_chrome_options(headless=True):
     return options
 
 def get_driver(headless=True):
+    chrome_options = Options()
+    if headless:
+        chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+
     return webdriver.Chrome(
-        service=Service(ChromeDriverManager().install()),
-        options=get_chrome_options(headless)
+        service=Service("/usr/bin/chromedriver"),
+        options=chrome_options
     )
 
 # ========== Login & Cookie Setup ==========
