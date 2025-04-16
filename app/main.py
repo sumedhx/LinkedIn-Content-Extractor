@@ -3,15 +3,7 @@ import os, pickle, time, random, re, requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from datetime import datetime, timezone
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from playwright.sync_api import sync_playwright
 
 # ========== ENV + FastAPI ==========
 load_dotenv()
@@ -25,31 +17,11 @@ TELEGRAM_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 COOKIES_FILE = 'cookies.pkl'
 LINKEDIN_URL = 'https://www.linkedin.com'
 
-# ========== Selenium Setup ==========
-def get_chrome_options(headless=True):
-    options = Options()
-    options.add_argument('--disable-blink-features=AutomationControlled')
-    options.add_experimental_option('excludeSwitches', ['enable-automation'])
-    options.add_experimental_option('useAutomationExtension', False)
-    options.add_argument("--start-maximized")
-    if headless:
-        options.add_argument('--headless=new')
-        options.add_argument("--disable-gpu")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--window-size=1920,1080")
-    return options
-
-def get_driver(headless=True):
-    options = webdriver.ChromeOptions()
-    if headless:
-        options.add_argument("--headless")
-        options.add_argument("--disable-gpu")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-
-    driver = webdriver.Chrome(options=options)
-    return driver
-
+# ========== Playwright Setup ==========
+def get_playwright_browser(headless=True):
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=headless)
+        return browser
 
 # ========== Login & Cookie Setup ==========
 def ensure_logged_in():
@@ -58,8 +30,10 @@ def ensure_logged_in():
         return
 
     print("🔓 Cookies not found. Opening browser for manual login...")
-    driver = get_driver(headless=False)
-    driver.get("https://www.linkedin.com/login")
+    browser = get_playwright_browser(headless=False)
+    page = browser.new_page()
+
+    page.goto("https://www.linkedin.com/login")
 
     # Give the user 60 seconds max to log in manually
     max_wait = 60
@@ -69,24 +43,23 @@ def ensure_logged_in():
     print("⏳ You have 60 seconds to log in manually...")
 
     while time.time() - start_time < max_wait:
-        current_url = driver.current_url
-        if "feed" in current_url or "linkedin.com/in/" in current_url:
+        if page.url != "https://www.linkedin.com/login":
             logged_in = True
             break
         time.sleep(2)  # check every 2 seconds
 
     if not logged_in:
         print("❌ Login not detected within time limit. Browser closed.")
-        driver.quit()
+        browser.close()
         raise Exception("Login failed or timed out.")
 
     # Save cookies after successful login
+    cookies = page.context.cookies()
     with open(COOKIES_FILE, 'wb') as f:
-        pickle.dump(driver.get_cookies(), f)
+        pickle.dump(cookies, f)
         print("✅ Cookies saved.")
 
-    driver.quit()
-
+    browser.close()
 
 # ========== Notion ==========
 def notion_send(title, content, clean_url, image_url):
@@ -161,41 +134,37 @@ async def receive_update(request: Request):
     # Ensure we're logged in (save cookies if needed)
     ensure_logged_in()
 
-    driver = get_driver(headless=True)
-    driver.get(LINKEDIN_URL)
+    browser = get_playwright_browser(headless=True)
+    page = browser.new_page()
 
     # Load cookies
     with open(COOKIES_FILE, 'rb') as f:
         cookies = pickle.load(f)
         for cookie in cookies:
-            if 'expiry' in cookie:
-                del cookie['expiry']
-            driver.add_cookie(cookie)
-    driver.get("https://www.linkedin.com/feed/")
+            page.context.add_cookies([cookie])
+    
+    page.goto("https://www.linkedin.com/feed/")
     time.sleep(4)
 
     # Go to LinkedIn post
-    driver.get(linkedin_url)
+    page.goto(linkedin_url)
 
     # Wait for main post container to load
-    #Added this because when send a link it sometimes process the old/previous link
     try:
-        WebDriverWait(driver, 15).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "update-components-actor__title"))
-        )
+        page.wait_for_selector(".update-components-actor__title", timeout=15000)
     except:
         print("❌ LinkedIn post not fully loaded. Try again later.")
-        driver.quit()
+        browser.close()
         return {"status": "post_not_loaded"}
 
     # Scroll to trigger loading
-    actions = ActionChains(driver)
     for _ in range(3):
-        actions.send_keys(Keys.PAGE_DOWN).perform()
+        page.keyboard.press("PageDown")
         time.sleep(random.uniform(1.5, 2.5))
 
     # Parse page
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    html = page.content()
+    soup = BeautifulSoup(html, 'html.parser')
 
     # ==== Title from Author ====
     author_block = soup.find("span", class_="update-components-actor__title")
@@ -239,5 +208,5 @@ async def receive_update(request: Request):
         "parse_mode": "Markdown"
     })
 
-    driver.quit()
+    browser.close()
     return {"status": "ok"}
