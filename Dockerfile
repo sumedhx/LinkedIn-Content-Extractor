@@ -1,45 +1,39 @@
-FROM python:3.10-slim
+# Use the official Python image from the Docker Hub
+FROM python:3.9-slim
 
-# Install required packages
-RUN apt-get update && apt-get install -y \
-    wget unzip gnupg curl fonts-liberation libappindicator3-1 \
-    libasound2 libnspr4 libnss3 libxss1 libgbm-dev libx11-xcb1 \
-    libxcomposite1 libxdamage1 libxi6 libxtst6 xdg-utils \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Chrome (headless)
-RUN apt-get update && apt-get install -y wget unzip curl gnupg
-
-RUN wget https://storage.googleapis.com/chrome-for-testing-public/121.0.6167.139/linux64/chrome-linux64.zip && \
-    unzip chrome-linux64.zip && \
-    mv chrome-linux64 /opt/chromium && \
-    ln -s /opt/chromium/chrome /usr/bin/chromium && \
-    rm chrome-linux64.zip
-
-# Install ChromeDriver (matching version)
-RUN wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/121.0.6167.139/linux64/chromedriver-linux64.zip && \
-    unzip chromedriver-linux64.zip && \
-    mv chromedriver-linux64/chromedriver /usr/bin/chromedriver && \
-    chmod +x /usr/bin/chromedriver && \
-    rm -rf chromedriver-linux64.zip chromedriver-linux64
-
-
-# Set environment variables
-ENV CHROME_BIN=/usr/bin/chromium
-ENV PATH="/usr/bin/chromedriver:$PATH"
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-# Set working directory
+# Set the working directory in the container
 WORKDIR /app
+
+# Copy the current directory contents into the container at /app
 COPY . /app
 
-# Install Python dependencies
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# Install required dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    libx11-dev \
+    libnss3-dev \
+    libgdk-pixbuf2.0-0 \
+    libasound2 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libpangocairo-1.0-0 \
+    libpango-1.0-0 \
+    libgtk-3-0 \
+    libgbm-dev \
+    libnotify4 \
+    libgconf-2-4 \
+    libxss1 \
+    fonts-liberation \
+    libappindicator3-1 \
+    libcurl4 \
+    xdg-utils \
+    && rm -rf /var/lib/apt/lists/*
 
-# Expose port
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Expose the FastAPI app port
 EXPOSE 8000
 
-# Run FastAPI app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Command to run the application
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
