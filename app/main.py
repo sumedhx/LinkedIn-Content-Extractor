@@ -39,17 +39,17 @@ def get_chrome_options(headless=True):
         options.add_argument("--window-size=1920,1080")
     return options
 
-def get_driver():
-    chrome_options = Options()
-    chrome_options.add_argument('--headless=new')
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument('--disable-software-rasterizer')
-    chrome_options.add_argument('--window-size=1920,1080')
+def get_driver(headless=True):
+    options = webdriver.ChromeOptions()
+    if headless:
+        options.add_argument("--headless")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
 
-    driver = webdriver.Chrome(options=chrome_options)
+    driver = webdriver.Chrome(options=options)
     return driver
+
 
 # ========== Login & Cookie Setup ==========
 def ensure_logged_in():
