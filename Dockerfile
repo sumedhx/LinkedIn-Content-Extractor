@@ -1,42 +1,43 @@
-# Use official Python image
 FROM python:3.10-slim
 
-# Install OS dependencies
+# Install dependencies
 RUN apt-get update && apt-get install -y \
-    wget unzip gnupg curl jq fonts-liberation libappindicator3-1 \
+    wget unzip gnupg curl fonts-liberation libappindicator3-1 \
     libasound2 libnspr4 libnss3 libxss1 libgbm-dev libx11-xcb1 \
     libxcomposite1 libxdamage1 libxi6 libxtst6 xdg-utils \
-    chromium \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Set environment variables for Chromium
-ENV CHROME_BIN=/usr/bin/chromium
-ENV PATH="/usr/bin/chromedriver:$PATH"
+# -------------------------
+# ✅ Install Chromium v114
+# -------------------------
+RUN wget https://commondatastorage.googleapis.com/chromium-browser-snapshots/Linux_x64/1142528/chrome-linux.zip && \
+    unzip chrome-linux.zip && \
+    mv chrome-linux /opt/chromium && \
+    ln -s /opt/chromium/chrome /usr/bin/chromium && \
+    rm chrome-linux.zip
 
-# Install matching ChromeDriver for Chromium
-RUN CHROME_VERSION=$(chromium --version | grep -oP '\d+\.\d+\.\d+') && \
-    echo "Detected Chromium version: $CHROME_VERSION" && \
-    CHROMEDRIVER_URL=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json \
-    | jq -r --arg ver "$CHROME_VERSION" '.channels.Stable.downloads.chromedriver[] | select(.platform == "linux64") | .url') && \
-    wget "$CHROMEDRIVER_URL" -O chromedriver.zip && \
-    unzip chromedriver.zip && \
+# -----------------------------
+# ✅ Install ChromeDriver v114
+# -----------------------------
+RUN wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/114.0.5735.90/linux64/chromedriver-linux64.zip && \
+    unzip chromedriver-linux64.zip && \
     mv chromedriver-linux64/chromedriver /usr/bin/chromedriver && \
     chmod +x /usr/bin/chromedriver && \
-    rm -rf chromedriver.zip chromedriver-linux64
+    rm -rf chromedriver-linux64*
 
-# Set Python env variables
+# Set environment variables
+ENV CHROME_BIN=/usr/bin/chromium
+ENV PATH="/usr/bin/chromedriver:$PATH"
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Set work directory
+# Set working directory
 WORKDIR /app
-
-# Copy app files
 COPY . /app
 
 # Install Python dependencies
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Expose port
 EXPOSE 8000
