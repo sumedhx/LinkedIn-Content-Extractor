@@ -1,6 +1,6 @@
 FROM python:3.10-slim
 
-# Install dependencies
+# Install required packages
 RUN apt-get update && apt-get install -y \
     wget unzip gnupg curl fonts-liberation libappindicator3-1 \
     libasound2 libnspr4 libnss3 libxss1 libgbm-dev libx11-xcb1 \
@@ -8,18 +8,18 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# -------------------------
-# ✅ Install Chromium v114
-# -------------------------
-RUN wget https://commondatastorage.googleapis.com/chromium-browser-snapshots/Linux_x64/1142528/chrome-linux.zip && \
-    unzip chrome-linux.zip && \
-    mv chrome-linux /opt/chromium && \
-    ln -s /opt/chromium/chrome /usr/bin/chromium && \
-    rm chrome-linux.zip
+# -------------------------------------
+# ✅ Download Chrome for Testing (v114)
+# -------------------------------------
+RUN wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/114.0.5735.90/linux64/chrome-linux64.zip && \
+    unzip chrome-linux64.zip && \
+    mv chrome-linux64 /opt/chrome && \
+    ln -s /opt/chrome/chrome /usr/bin/chromium && \
+    rm chrome-linux64.zip
 
-# -----------------------------
-# ✅ Install ChromeDriver v114
-# -----------------------------
+# -------------------------------------
+# ✅ Download ChromeDriver (v114 match)
+# -------------------------------------
 RUN wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/114.0.5735.90/linux64/chromedriver-linux64.zip && \
     unzip chromedriver-linux64.zip && \
     mv chromedriver-linux64/chromedriver /usr/bin/chromedriver && \
