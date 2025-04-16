@@ -7,3 +7,5 @@ services:
     ports:
       - "8000:8000"
     shm_size: "2g"
+    env_file:
+      - .env  # Ensures the environment variables from the .env file are loaded into the container
