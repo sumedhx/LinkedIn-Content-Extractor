@@ -4,10 +4,13 @@ FROM python:3.9-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
-COPY . /app
+# Copy only the necessary files into the container
+COPY requirements.txt /app/
+COPY .env /app/
+COPY app /app/app
+COPY cookies.pkl /app/
 
-# Install required dependencies
+# Install system dependencies needed for Playwright
 RUN apt-get update && apt-get install -y \
     wget \
     libx11-dev \
@@ -35,5 +38,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Expose the FastAPI app port
 EXPOSE 8000
 
-# Command to run the application
+# Command to run the FastAPI app
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
