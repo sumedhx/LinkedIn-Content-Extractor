@@ -17,6 +17,9 @@
 - Backend will extract the content from post using beautiful soup.
 - The extracted content will be saved into the Notion database.
 
+## Database Link
+- https://www.notion.so/1ca1b6e177c680f8b85fc90d9b1790f1?v=1c9959f97de580f88299000c0c36a662
+
 ## Run
 - uvicorn main:app --reload
 
