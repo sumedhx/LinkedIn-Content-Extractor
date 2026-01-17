@@ -27,87 +27,14 @@
 
 ## Stepwise Execution Flow
 
-# 🔄 LinkedIn Scraper – Execution Flow
+<img width="408" height="611" alt="Screenshot 2026-01-17 at 11 38 17 PM" src="https://github.com/user-attachments/assets/a2a8176e-cd91-4248-9d4c-748defa4de78" /> |  
 
-## 1. User Interaction
-- User sends a message to the **Telegram Bot**
-- Message contains a **LinkedIn post URL**
 
----
+<img width="402" height="619" alt="Screenshot 2026-01-17 at 11 38 35 PM" src="https://github.com/user-attachments/assets/d93cbec5-b941-489c-ad68-91432f1a3979" /> | 
 
-## 2. Telegram Webhook
-- Telegram forwards the message to the backend
-- **FastAPI `/webhook`** endpoint receives the update
 
----
+<img width="404" height="317" alt="Screenshot 2026-01-17 at 11 38 47 PM" src="https://github.com/user-attachments/assets/893d50a0-3727-49ee-97ad-cdd6a5421fd2" />    
 
-## 3. URL Validation
-- Backend checks if the message contains a valid LinkedIn URL
 
-### Possible Outcomes
-- ❌ **Invalid URL**
-  - Bot replies: *"Invalid LinkedIn link"*
-  - Process ends
-- ✅ **Valid URL**
-  - URL is extracted and cleaned
-  - Flow continues
 
----
 
-## 4. Authentication Layer
-- Backend checks for saved LinkedIn cookies (`cookies.pkl`)
-
-### Authentication Logic
-- ✅ **Cookies exist**
-  - Reuse existing LinkedIn session
-- ❌ **Cookies missing**
-  - Open browser
-  - Manual LinkedIn login required
-  - Save cookies for future use
-
----
-
-## 5. Scraping Engine
-- Launch **Playwright** in headless mode
-- Load cookies into browser session
-- Open LinkedIn feed
-- Navigate to the target LinkedIn post URL
-- Wait for post container to load
-
-### Error Handling
-- ❌ **Post not loaded**
-  - Return error
-  - End process
-- ✅ **Post loaded**
-  - Continue to extraction
-
----
-
-## 6. Data Extraction
-- Scroll page to trigger lazy loading
-- Extract full page HTML
-- Parse HTML using **BeautifulSoup**
-
-### Extracted Data
-- 👤 Author name  
-- 📝 Post text content  
-- 🖼️ Post images (`feedshare-shrink`)
-
----
-
-## 7. Data Storage
-- Format extracted data for **Notion API**
-- Create a new page in Notion database with:
-  - Title
-  - Content
-  - Clean LinkedIn URL
-  - Image URLs
-  - Timestamp
-
----
-
-## 8. User Feedback
-- Send confirmation message to Telegram
-- Include preview of saved content
-- Close browser
-- Return success response (`OK`)
