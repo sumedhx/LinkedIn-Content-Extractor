@@ -23,3 +23,130 @@
 ## Run
 - uvicorn main:app --reload
 
+
+
+## Stepwise Execution Flow
+┌────────────────────────────┐
+│ 1. USER INTERACTION        │
+└────────────────────────────┘
+        │
+        ▼
+User sends a message to the Telegram Bot
+containing a LinkedIn post URL
+
+        │
+        ▼
+┌────────────────────────────┐
+│ 2. TELEGRAM WEBHOOK        │
+└────────────────────────────┘
+        │
+        ▼
+FastAPI (/webhook) receives the update
+
+        │
+        ▼
+┌────────────────────────────┐
+│ 3. URL VALIDATION          │
+└────────────────────────────┘
+        │
+        ├── ❌ No LinkedIn URL
+        │       → Reply: "Invalid LinkedIn link"
+        │       → END
+        │
+        └── ✅ Valid LinkedIn URL
+                │
+                ▼
+┌────────────────────────────┐
+│ 4. AUTHENTICATION LAYER    │
+└────────────────────────────┘
+        │
+        ▼
+Check for saved LinkedIn cookies (cookies.pkl)
+
+        │
+        ├── ✅ Cookies exist
+        │       → Use saved session
+        │
+        └── ❌ Cookies missing
+                → Open browser
+                → Manual LinkedIn login
+                → Save cookies
+
+        │
+        ▼
+┌────────────────────────────┐
+│ 5. SCRAPING ENGINE         │
+└────────────────────────────┘
+        │
+        ▼
+Launch Playwright (headless)
+
+        │
+        ▼
+Load cookies into browser session
+
+        │
+        ▼
+Open LinkedIn feed → Navigate to post URL
+
+        │
+        ▼
+Wait for post container to load
+
+        │
+        ├── ❌ Post not loaded
+        │       → Return error
+        │       → END
+        │
+        └── ✅ Post loaded
+                │
+                ▼
+┌────────────────────────────┐
+│ 6. DATA EXTRACTION         │
+└────────────────────────────┘
+        │
+        ▼
+Scroll page to trigger lazy loading
+
+        │
+        ▼
+Extract page HTML
+
+        │
+        ▼
+Parse HTML using BeautifulSoup
+
+        │
+        ▼
+Extract:
+• Author name  
+• Post text content  
+• Post images (feedshare-shrink)
+
+        │
+        ▼
+┌────────────────────────────┐
+│ 7. DATA STORAGE            │
+└────────────────────────────┘
+        │
+        ▼
+Format data for Notion API
+
+        │
+        ▼
+Create new page in Notion Database
+with title, content, URL, images, timestamp
+
+        │
+        ▼
+┌────────────────────────────┐
+│ 8. USER FEEDBACK           │
+└────────────────────────────┘
+        │
+        ▼
+Send confirmation message to Telegram
+with preview of saved content
+
+        │
+        ▼
+Close browser → Return OK
